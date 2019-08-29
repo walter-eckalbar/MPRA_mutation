@@ -19,6 +19,7 @@ parser.add_argument("-a", "--allSingleBP", default="T", type=bool, help="-a [--a
 parser.add_argument("-m", "--makeWindow", default="T", type=bool, help="-m [--makeWindow] If TRUE will output windowed mutations, and apply options -w and -s below")
 parser.add_argument("-w", "--window", default="8", type=int, help="window size to mutate")
 parser.add_argument("-st", "--step", default="4", type=int, help="step size for mutations, recomend ~1/2 of window size")
+parser.add_argument("-o", "--output", default = "output_base", type=str, help="-o [--output] basename for output files")
 args = parser.parse_args()
 
 seq = args.sequence
@@ -26,6 +27,7 @@ allSingleBP = args.allSingleBP
 makeWindow = args.makeWindow
 window = args.window
 step = args.step
+outbase = args.output
 
 allNucs = ["A","C","G","T"]
 pure = ["A","G"]
@@ -96,8 +98,10 @@ def makeWindowedTransverstions(input,windowN,stepN):
 				newBP = randomTransition(bp)
 				newChunk = newChunk + newBP
 			while newChunk in chunkList:
-				newBP = randomTransition(bp)
-				newChunk = newChunk + newBP
+				newChunk = ''
+				for bp in chunk:
+					newBP = randomTransition(bp)
+					newChunk = newChunk + newBP
 			if newChunk not in chunkList:
 				chunkList.append(newChunk)
 			newSeq = str(newStartSeq) + str(newChunk) + str(newEndSeq)
@@ -105,17 +109,41 @@ def makeWindowedTransverstions(input,windowN,stepN):
 
 	return allTransList
 
+if allSingleBP:
+	seqList = makeAllSingleMutations(seq)
 
-seqList = makeAllSingleMutations(seq)
+	outTxt=outbase+".singleMustations.txt"
+	outFa=outbase+".singleMustations.fa"
 
-secondSeqList = makeWindowedTransverstions(seq,window,step)
+	with open(outTxt,'w') as outTxtFile:
+		for item in seqList:
+			outTxtFile.write('%s\n' % item)
+	counter = 0
+	with open(outFa,'w') as outFaFile:
+		for item in seqList:
+			counter+=1
+			name=">WindowName_"+str(counter)
+			outFaFile.write('%s\n' % name)
+			outFaFile.write('%s\n' % item)
+		
 
-counter=0
-for j in secondSeqList:
-	#counter+=1
-	#print ">Single_mut_"+str(counter)
-	print(j)
 
+if makeWindow:
+	secondSeqList = makeWindowedTransverstions(seq,window,step)
+
+	outTxt=outbase+".window"+str(window)+".step"+str(step)+".txt"
+	outFa=outbase+".window"+str(window)+".step"+str(step)+".fa"
+
+	with open(outTxt,'w') as outTxtFile:
+		for item in secondSeqList:
+			outTxtFile.write('%s\n' % item)
+	counter = 0
+	with open(outFa,'w') as outFaFile:
+		for item in secondSeqList:
+			counter+=1
+			name=">WindowName_"+str(counter)
+			outFaFile.write('%s\n' % name)
+			outFaFile.write('%s\n' % item)
 
 
 
